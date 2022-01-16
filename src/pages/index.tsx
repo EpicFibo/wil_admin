@@ -312,7 +312,7 @@ const Home: NextPage = () => {
           sx={{ width: "100%", maxWidth: 360,bgcolor:"#15f505"}}
           onClick={createApprovedItems}
         >
-          Approved
+          Approve
         </Button>
         </Container>
         
