@@ -14,6 +14,8 @@ import Button from "@mui/material/Button";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
 
+
+import RefreshIcon from '@mui/icons-material/Refresh';
 import IconButton from "@mui/material/IconButton";
 import AlarmIcon from "@mui/icons-material/Alarm";
 import Grid from "@mui/material/Grid";
@@ -33,10 +35,10 @@ import ListItemButton from "@mui/material/ListItemButton";
 import Avatar from "@mui/material/Avatar";
 import { FixedSizeList, ListChildComponentProps } from "react-window";
 import { API, graphqlOperation  } from "aws-amplify";
-import { createTodo, updateTodo, deleteTodo } from '../graphql/mutations';
+import { createTodo, updateTodo, deleteTodo,createApproved,updateApproved, deleteApproved } from '../graphql/mutations';
 import * as queries from '../graphql/queries';
-import * as mutations from '../graphql/mutations';
 import * as subscriptions from '../graphql/subscriptions';
+import { GraphQLResult } from "@aws-amplify/api-graphql";
 
 const Modalstyle = {
   position: "absolute",
@@ -145,7 +147,7 @@ const Home: NextPage = () => {
   function renderRow(props: ListChildComponentProps) {
     const { index, style } = props;
     return (
-      <ListItem sx={{ bgcolor: "#ffffff" }}>
+      <ListItem style={style} sx={{ bgcolor: "#ffffff" }}>
         <Container
           sx={{
             display: "flex",
@@ -221,10 +223,49 @@ const Home: NextPage = () => {
     await API.graphql(graphqlOperation(createTodo, {input: {name: "Thanatat Pronpraserd",product_list:items,product_count:itemsNum}}));
     resetItemList();
   }
-  
+  async function createApprovedItems(){
+    const allTodos = await API.graphql({ query: queries.listTodos });
+    for (let j =0; j<allTodos['data']['listTodos']['items'].length; j++){
+      let id:string =allTodos['data']['listTodos']['items'][j]['id'];
+      let name:string =allTodos['data']['listTodos']['items'][j]['name'];
+      let product_list:string[] = [];
+      let product_count:number[] =[];
+      for (let i = 0; i < allTodos['data']['listTodos']['items'][j]['product_list'].length; i++) {
+        product_list.push(allTodos['data']['listTodos']['items'][j]['product_list'][i]);
+        product_count.push(allTodos['data']['listTodos']['items'][j]['product_count'][i]);
+      }
+      await API.graphql(graphqlOperation(createApproved, {input: {id:id,name:name,product_list:product_list,product_count:product_count}}));
+      await API.graphql(graphqlOperation(deleteTodo, {input: {id:allTodos['data']['listTodos']['items'][j]['id']}}));
+      console.log(allTodos['data']['listTodos']['items'][j]['id']);
+    }
+    resetItemList();
+  }
+  async function deleteApprovedItems(){
+    const allTodos = await API.graphql({ query: queries.listTodos });
+    for (let j =0; j<allTodos['data']['listTodos']['items'].length; j++){
+      await API.graphql(graphqlOperation(deleteTodo, {input: {id:allTodos['data']['listTodos']['items'][j]['id']}}));
+    }
+    resetItemList();
+  }
+
   async function queryTodoItems2(){
     const allTodos = await API.graphql({ query: queries.listTodos });
-    console.log(allTodos);
+    let product_list: string[] = [];
+    let product_count: number[] = [];
+    
+    
+    for (let j =0; j<allTodos['data']['listTodos']['items'].length; j++){
+      for (let i = 0; i < allTodos['data']['listTodos']['items'][j]['product_list'].length; i++) {
+        product_list.push(allTodos['data']['listTodos']['items'][j]['product_list'][i]);
+        product_count.push(allTodos['data']['listTodos']['items'][j]['product_count'][i]);
+        console.log(allTodos);
+      }
+    }
+    if(product_list.length > 0){
+      setItems([...product_list]);
+      setItemsNum([...product_count]);
+      setAccept(false);
+      }
   }
   
   return (
@@ -241,9 +282,9 @@ const Home: NextPage = () => {
         <FixedSizeList
           height={400}
           width={"100%"}
-          itemSize={46}
+          itemSize={80}
           itemCount={items.length}
-          overscanCount={8}
+          overscanCount={5}
         >
           {renderRow}
         </FixedSizeList>
@@ -259,34 +300,32 @@ const Home: NextPage = () => {
         <Button
           variant="contained"
           
-          // disabled={Accept}
+          disabled={Accept}
           sx={{ width: "100%", maxWidth: 360,bgcolor:"#ed2424" }}
-          onClick={queryTodoItems2}
+          onClick={deleteApprovedItems}
         >
           Reject
         </Button>
         <Button
           variant="contained"
-          // disabled={Accept}
+          disabled={Accept}
           sx={{ width: "100%", maxWidth: 360,bgcolor:"#15f505"}}
+          onClick={createApprovedItems}
         >
           Approved
         </Button>
         </Container>
         
-        {/* <Fab
+        <Fab
           size="medium"
           color="secondary"
           aria-label="add"
           sx={FABstyle}
           // style={FABstyle}
-          onClick={() => {
-            setOpen(true);
-            dispatch({ type: "reset" });
-          }}
+          onClick={queryTodoItems2}
         >
-          <AddIcon />
-        </Fab> */}
+          <RefreshIcon />
+        </Fab>
         <Modal
           open={open}
           onClose={handleClose}
