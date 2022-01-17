@@ -14,7 +14,7 @@ import Button from "@mui/material/Button";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
 
-
+import ArticleIcon from '@mui/icons-material/Article';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import IconButton from "@mui/material/IconButton";
 import AlarmIcon from "@mui/icons-material/Alarm";
@@ -60,6 +60,16 @@ const FABstyle = {
   margin: 0,
   top: "auto",
   right: 20,
+  bottom: 20,
+  left: "auto",
+  position: "fixed",
+  color: "secondary",
+};
+
+const FABstyle2 = {
+  margin: 0,
+  top: "auto",
+  right: 80,
   bottom: 20,
   left: "auto",
   position: "fixed",
@@ -267,6 +277,24 @@ const Home: NextPage = () => {
       setAccept(false);
       }
   }
+  async function queryApprovedsItems(){
+    const allTodos = await API.graphql({ query: queries.listApproveds});
+    let product_list: string[] = [];
+    let product_count: number[] = [];
+    
+    for (let j =0; j<allTodos['data']['listApproveds']['items'].length; j++){
+      for (let i = 0; i < allTodos['data']['listApproveds']['items'][j]['product_list'].length; i++) {
+        product_list.push(allTodos['data']['listApproveds']['items'][j]['product_list'][i]);
+        product_count.push(allTodos['data']['listApproveds']['items'][j]['product_count'][i]);
+        console.log(allTodos);
+      }
+    }
+    if(product_list.length > 0){
+      setItems([...product_list]);
+      setItemsNum([...product_count]);
+      setAccept(false);
+      }
+  }
   
   return (
     <Container>
@@ -325,6 +353,16 @@ const Home: NextPage = () => {
           onClick={queryTodoItems2}
         >
           <RefreshIcon />
+        </Fab>
+        <Fab
+          size="medium"
+          color="secondary"
+          aria-label="add"
+          sx={FABstyle2}
+          // style={FABstyle}
+          onClick={queryApprovedsItems}
+        >
+          <ArticleIcon />
         </Fab>
         <Modal
           open={open}
